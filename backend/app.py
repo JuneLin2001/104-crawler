@@ -9,7 +9,7 @@ app = Flask(__name__)
 # 啟用 CORS 支援
 CORS(app)
 
-url = "https://www.104.com.tw/jobs/search/api/jobs?area=6001001000%2C6001002000&jobcat=2007001015%2C2007001017&jobsource=joblist_search&mode=s&order=15&pagesize=20&scmin=40000&scneg=1&scstrict=1&sctp=M&searchJobs=1"
+url = "https://www.104.com.tw/jobs/search/api/jobs?area=6001001000%2C6001002000&jobcat=2007001015%2C2007001017&jobsource=joblist_search&mode=s&order=15&pagesize=100&scmin=40000&scneg=1&scstrict=1&sctp=M&searchJobs=1"
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -26,36 +26,44 @@ def clean_text(text):
 @app.route("/api/jobs", methods=["GET"])
 def get_jobs():
     def generate_jobs():
-        # 存儲所有資料的列表
         all_data = []
         page_index = 1
-        total_pages = 0  # 記錄已抓取的頁數
+        total_pages = 0
+        total_items = 0
 
+        # 發送第一次請求以獲得總頁數和總項目數
+        response = requests.get(f"{url}&page={page_index}", headers=headers)
+        data = response.json()
+        job_list = data.get("data", [])
+        pagination = data.get("metadata", {}).get("pagination", {})
+
+        if pagination:
+            total_pages = pagination.get("lastPage", 0)
+            total_items = pagination.get("total", 0)
+
+        print(f"正在發送請求，total_pages: {total_pages}, total_items: {total_items}")
+
+        metadata = {
+            "lastPage": total_pages,
+            "total": total_items
+        }
+        # 只回傳一次 metadata
+        yield f"data: {json.dumps({'metadata': metadata})}\n\n"
+
+        # 開始爬取所有頁面
         while True:
-            print(f"正在發送請求，PageIndex: {page_index}")
-
-            # 動態生成每一頁的 URL
             page_url = f"{url}&page={page_index}"
-
-            # 發送 GET 請求
             response = requests.get(page_url, headers=headers)
+            data = response.json()
+            job_list = data.get("data", [])
 
-            # 假設返回的 JSON 資料中有職位列表
-            data = response.json()  # 假設返回的是 JSON 格式資料
-            job_list = data.get("data", [])  # 假設 JSON 裡的資料在 "data" 欄位
-
-            # 如果沒有資料，則停止抓取
             if not job_list:
                 print("沒有更多資料，抓取結束。")
                 break
 
-            # 增加已抓取的頁數
-            total_pages += 1
+            # 每次頁面爬取完成後回傳頁數進度
+            yield f"data: {json.dumps({'page_count': page_index, 'total_pages': total_pages})}\n\n"
 
-            # 發送頁數資料給前端
-            yield f"data: {json.dumps({'page_count': total_pages})}\n\n"
-
-            # 遍歷每一個職位，將其資訊加入 all_data
             for job in job_list:
                 job_info = {
                     "Appear Date": clean_text(job.get("appearDate", "")),
@@ -67,17 +75,14 @@ def get_jobs():
                 }
                 all_data.append(job_info)
 
-            # 如果工作列表數量小於20，說明已經是最後一頁
-            if len(job_list) < 20:
-                print("已經抓取到最後一頁。")
+            if page_index >= total_pages:
                 break
 
             page_index += 1  # 增加頁數繼續抓取下一頁
 
-        # 返回抓取到的所有資料
+        # 最後將所有的工作資料發送給前端
         yield f"data: {json.dumps({'jobs': all_data})}\n\n"
 
-    # 使用 Flask 的 Response 回傳 SSE 流式數據
     return Response(generate_jobs(), content_type='text/event-stream')
 
 
