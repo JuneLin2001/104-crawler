@@ -2,10 +2,8 @@
   <div id="app">
     <h1>Job Scraper</h1>
 
-    <!-- 顯示已抓到的頁數 -->
     <p>已抓到 {{ pageCount }} 頁資料</p>
 
-    <!-- 顯示工作列表 -->
     <h3>爬取的工作列表：</h3>
     <ul>
       <li v-for="job in jobs" :key="job['Job Link']">
