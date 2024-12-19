@@ -16,11 +16,37 @@ headers = {
     "Referer": "https://www.104.com.tw/"
 }
 
+keywords = {
+    "JavaScript": "javascript",
+    "React": "react",
+    "Vue": "vue",
+    "Python": "python",
+    "Node.js": "nodejs",
+    "TypeScript": "typescript",
+    "Tailwindcss": "tailwindcss",
+}
+
 
 def clean_text(text):
+    # 移除非英文、數字以及中文字符以外的字符，包括換行符
     if isinstance(text, str):
-        return re.sub(r'[^\x20-\x7E\u4e00-\u9fa5]', '', text)
+        text = re.sub(r'[\s\n\r]+', ' ', text)  # 將所有的空白符號和換行符替換成單一空格
+        return re.sub(r'[^\x20-\x7E\u4e00-\u9fa5]', '', text)  # 移除非英文、數字和中文字符
     return text
+
+
+def extract_labels(description):
+    labels = set()  # 使用集合確保標籤不重複
+    # 先清理文本中的特殊字符
+    description = clean_text(description)
+
+    # 檢查描述是否包含關鍵字
+    for keyword, label in keywords.items():
+        # 使用正則表達式來檢查關鍵字
+        if re.search(r'\b' + re.escape(keyword) + r'\b', description, re.IGNORECASE):
+            labels.add(label)
+
+    return list(labels)
 
 
 @app.route("/api/jobs", methods=["GET"])
@@ -72,6 +98,8 @@ def get_jobs():
                     "Description": clean_text(job.get("description", "")),
                     "Job Address": clean_text(job.get("jobAddrNoDesc", "")),
                     "Job Link": clean_text(job.get("link", {}).get("job", "")),
+                    "Labels": extract_labels(job.get("description", ""))
+
                 }
                 all_data.append(job_info)
 
