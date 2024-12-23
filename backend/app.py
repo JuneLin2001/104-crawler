@@ -6,7 +6,6 @@ import re
 
 app = Flask(__name__)
 
-# 啟用 CORS 支援
 CORS(app)
 
 url = "https://www.104.com.tw/jobs/search/api/jobs?area=6001001000%2C6001002000&jobcat=2007001015%2C2007001017&jobsource=joblist_search&mode=s&order=15&pagesize=100&scmin=40000&scneg=1&scstrict=1&sctp=M&searchJobs=1"
@@ -28,21 +27,17 @@ keywords = {
 
 
 def clean_text(text):
-    # 移除非英文、數字以及中文字符以外的字符，包括換行符
     if isinstance(text, str):
-        text = re.sub(r'[\s\n\r]+', ' ', text)  # 將所有的空白符號和換行符替換成單一空格
-        return re.sub(r'[^\x20-\x7E\u4e00-\u9fa5]', '', text)  # 移除非英文、數字和中文字符
+        text = re.sub(r'[\s\n\r]+', ' ', text)
+        return re.sub(r'[^\x20-\x7E\u4e00-\u9fa5]', '', text)
     return text
 
 
 def extract_labels(description):
-    labels = set()  # 使用集合確保標籤不重複
-    # 先清理文本中的特殊字符
+    labels = set()
     description = clean_text(description)
 
-    # 檢查描述是否包含關鍵字
     for keyword, label in keywords.items():
-        # 使用正則表達式來檢查關鍵字
         if re.search(r'\b' + re.escape(keyword) + r'\b', description, re.IGNORECASE):
             labels.add(label)
 
@@ -57,7 +52,6 @@ def get_jobs():
         total_pages = 0
         total_items = 0
 
-        # 發送第一次請求以獲得總頁數和總項目數
         response = requests.get(f"{url}&page={page_index}", headers=headers)
         data = response.json()
         job_list = data.get("data", [])
@@ -73,10 +67,8 @@ def get_jobs():
             "lastPage": total_pages,
             "total": total_items
         }
-        # 只回傳一次 metadata
         yield f"data: {json.dumps({'metadata': metadata})}\n\n"
 
-        # 開始爬取所有頁面
         while True:
             page_url = f"{url}&page={page_index}"
             response = requests.get(page_url, headers=headers)
@@ -87,7 +79,6 @@ def get_jobs():
                 print("沒有更多資料，抓取結束。")
                 break
 
-            # 每次頁面爬取完成後回傳頁數進度
             yield f"data: {json.dumps({'page_count': page_index, 'total_pages': total_pages})}\n\n"
 
             for job in job_list:
@@ -106,9 +97,8 @@ def get_jobs():
             if page_index >= total_pages:
                 break
 
-            page_index += 1  # 增加頁數繼續抓取下一頁
+            page_index += 1
 
-        # 最後將所有的工作資料發送給前端
         yield f"data: {json.dumps({'jobs': all_data})}\n\n"
 
     return Response(generate_jobs(), content_type='text/event-stream')
