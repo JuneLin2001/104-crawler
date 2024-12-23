@@ -1,3 +1,14 @@
+<script lang="ts">
+  export default {
+    props: {
+      progress: {
+        type: Number,
+        required: true,
+      },
+    },
+  };
+</script>
+
 <template>
   <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
     <div
@@ -9,14 +20,3 @@
     </p>
   </div>
 </template>
-
-<script>
-  export default {
-    props: {
-      progress: {
-        type: Number,
-        required: true,
-      },
-    },
-  };
-</script>

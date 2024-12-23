@@ -1,8 +1,9 @@
-<script>
+<script lang="ts">
   import ProgressBar from "./components/ProgressBar.vue";
   import Card from "./components/Card.vue";
 
   export default {
+    name: "App",
     components: {
       ProgressBar,
       Card,
@@ -15,6 +16,8 @@
         totalPages: 0,
         totalItems: 0,
         jobs: [],
+        filtered_out_jobs: [],
+        showFilteredOut: false,
       };
     },
     mounted() {
@@ -45,6 +48,11 @@
         eventSource.close();
       };
     },
+    computed: {
+      filteredOutJobs() {
+        return this.showFilteredOut ? this.filtered_out_jobs : this.jobs;
+      },
+    },
   };
 </script>
 
@@ -58,6 +66,23 @@
     <ProgressBar :progress="progress" />
 
     <h3 class="text-2xl text-gray-800 mt-6">爬取的工作列表：</h3>
-    <Card v-for="job in jobs" :key="job['Job Link']" :job="job" />
+
+    <div class="mt-6">
+      <label>
+        <input type="radio" v-model="showFilteredOut" :value="true" />
+        顯示過濾掉的工作
+      </label>
+      <label class="ml-4">
+        <input type="radio" v-model="showFilteredOut" :value="false" />
+        顯示正常工作
+      </label>
+    </div>
+
+    <Card
+      v-for="(job, index) in filteredOutJobs"
+      :key="job['Job Link']"
+      :job="job"
+      :index="index + 1"
+    />
   </div>
 </template>
