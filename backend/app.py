@@ -8,21 +8,19 @@ app = Flask(__name__)
 
 CORS(app)
 
+with open('./data/keywords.json', 'r', encoding='utf-8') as f:
+    keywords = json.load(f)
+
+with open('./data/filter_keywords.json', 'r', encoding='utf-8') as f:
+    filter_keywords = json.load(f)
+
+job_name_filter_keywords = filter_keywords.get("job_name", [])
+
 url = "https://www.104.com.tw/jobs/search/api/jobs?area=6001001000%2C6001002000&jobcat=2007001015%2C2007001017&jobsource=joblist_search&mode=s&order=15&pagesize=100&scmin=40000&scneg=1&scstrict=1&sctp=M&searchJobs=1"
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     "Referer": "https://www.104.com.tw/"
-}
-
-keywords = {
-    "JavaScript": "javascript",
-    "React": "react",
-    "Vue": "vue",
-    "Python": "python",
-    "Node.js": "nodejs",
-    "TypeScript": "typescript",
-    "Tailwindcss": "tailwindcss",
 }
 
 
@@ -44,13 +42,23 @@ def extract_labels(description):
     return list(labels)
 
 
+def filter_by_job_name(job_name):
+    job_name = clean_text(job_name)
+    for keyword in job_name_filter_keywords:
+        if re.search(r'\b' + re.escape(keyword) + r'\b', job_name, re.IGNORECASE):
+            return True
+    return False
+
+
 @app.route("/api/jobs", methods=["GET"])
 def get_jobs():
     def generate_jobs():
         all_data = []
+        filtered_out_jobs = []
         page_index = 1
         total_pages = 0
         total_items = 0
+        filtered_out_items = 0
 
         response = requests.get(f"{url}&page={page_index}", headers=headers)
         data = response.json()
@@ -82,15 +90,27 @@ def get_jobs():
             yield f"data: {json.dumps({'page_count': page_index, 'total_pages': total_pages})}\n\n"
 
             for job in job_list:
+                job_name = clean_text(job.get("jobName", ""))
+
+                if filter_by_job_name(job_name):
+                    filtered_out_items += 1
+                    print(f"過濾掉：{job_name}")
+                    filtered_out_jobs.append({
+                        "Job Name": job_name,
+                        "Description": clean_text(job.get("description", "")),
+                        "Job Address": clean_text(job.get("jobAddrNoDesc", "")),
+                        "Job Link": clean_text(job.get("link", {}).get("job", ""))
+                    })
+                    continue
+
                 job_info = {
                     "Appear Date": clean_text(job.get("appearDate", "")),
                     "Company Name": clean_text(job.get("custName", "")),
-                    "Job Name": clean_text(job.get("jobName", "")),
+                    "Job Name": job_name,
                     "Description": clean_text(job.get("description", "")),
                     "Job Address": clean_text(job.get("jobAddrNoDesc", "")),
                     "Job Link": clean_text(job.get("link", {}).get("job", "")),
                     "Labels": extract_labels(job.get("description", ""))
-
                 }
                 all_data.append(job_info)
 
@@ -99,7 +119,14 @@ def get_jobs():
 
             page_index += 1
 
+        total_items -= filtered_out_items
+
+        metadata['total'] = total_items
+        metadata['filtered_out'] = filtered_out_items
+
+        yield f"data: {json.dumps({'metadata': metadata})}\n\n"
         yield f"data: {json.dumps({'jobs': all_data})}\n\n"
+        yield f"data: {json.dumps({'filtered_out_jobs': filtered_out_jobs})}\n\n"
 
     return Response(generate_jobs(), content_type='text/event-stream')
 
