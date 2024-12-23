@@ -1,24 +1,38 @@
 <script lang="ts">
-  import ProgressBar from "./components/ProgressBar.vue";
   import Card from "./components/Card.vue";
+  import ProgressBar from "./components/ProgressBar.vue";
+
+  interface Job {
+    "Job Name": string;
+    Description: string;
+    "Job Address": string;
+    "Job Link": string;
+    "Appear Date": string;
+    "Company Name": string;
+    Labels: string[];
+  }
 
   export default {
     name: "App",
     components: {
-      ProgressBar,
       Card,
+      ProgressBar,
     },
-
     data() {
       return {
-        progress: 0,
+        jobs: [] as Job[],
+        filtered_out_jobs: [] as Job[],
+        showFilteredOut: false,
         pageCount: 0,
         totalPages: 0,
+        progress: 0,
         totalItems: 0,
-        jobs: [],
-        filtered_out_jobs: [],
-        showFilteredOut: false,
       };
+    },
+    computed: {
+      filteredOutJobs() {
+        return this.showFilteredOut ? this.filtered_out_jobs : this.jobs;
+      },
     },
     mounted() {
       const eventSource = new EventSource("http://localhost:5000/api/jobs");
@@ -33,8 +47,14 @@
         }
 
         if (data.jobs) {
-          this.jobs = data.jobs;
-          eventSource.close();
+          this.jobs = [...this.jobs, ...data.jobs];
+        }
+
+        if (data.filtered_out_jobs) {
+          this.filtered_out_jobs = [
+            ...this.filtered_out_jobs,
+            ...data.filtered_out_jobs,
+          ];
         }
 
         if (data.metadata) {
@@ -48,11 +68,6 @@
         eventSource.close();
       };
     },
-    computed: {
-      filteredOutJobs() {
-        return this.showFilteredOut ? this.filtered_out_jobs : this.jobs;
-      },
-    },
   };
 </script>
 
@@ -61,11 +76,12 @@
     <p class="text-xl text-gray-700 mb-4">
       已抓到 {{ pageCount }} 頁資料，共 {{ totalPages }} 頁
     </p>
-    <p class="text-xl text-gray-700 mb-4">共有 {{ totalItems }} 個工作</p>
+    <p class="text-xl text-gray-700 mb-4">
+      符合條件的共有 {{ totalItems }} 個工作，過濾了
+      {{ filtered_out_jobs.length }} 個工作
+    </p>
 
     <ProgressBar :progress="progress" />
-
-    <h3 class="text-2xl text-gray-800 mt-6">爬取的工作列表：</h3>
 
     <div class="mt-6">
       <label>
@@ -78,11 +94,23 @@
       </label>
     </div>
 
-    <Card
-      v-for="(job, index) in filteredOutJobs"
-      :key="job['Job Link']"
-      :job="job"
-      :index="index + 1"
-    />
+    <div v-if="showFilteredOut">
+      <h2 class="mt-6 text-xl">過濾掉的工作</h2>
+      <Card
+        v-for="(job, index) in filteredOutJobs"
+        :key="job['Job Link']"
+        :job="job"
+        :index="index + 1"
+      />
+    </div>
+    <div v-else>
+      <h2 class="mt-6 text-xl">正常工作</h2>
+      <Card
+        v-for="(job, index) in jobs"
+        :key="job['Job Link']"
+        :job="job"
+        :index="index + 1"
+      />
+    </div>
   </div>
 </template>

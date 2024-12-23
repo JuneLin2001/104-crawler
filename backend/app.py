@@ -46,11 +46,12 @@ def filter_by_job_name(job_name):
     job_name = clean_text(job_name)
     for keyword in job_name_filter_keywords:
         if re.search(r'\b' + re.escape(keyword) + r'\b', job_name, re.IGNORECASE):
+            print(f"匹配到關鍵字: {keyword}，過濾: {job_name}")
             return True
     return False
 
 
-@app.route("/api/jobs", methods=["GET"])
+@app.route("/api/jobs")
 def get_jobs():
     def generate_jobs():
         all_data = []
@@ -89,13 +90,18 @@ def get_jobs():
 
             yield f"data: {json.dumps({'page_count': page_index, 'total_pages': total_pages})}\n\n"
 
+            page_jobs = []
+            page_filtered_out_jobs = []
+
             for job in job_list:
                 job_name = clean_text(job.get("jobName", ""))
+                if not job_name:
+                    print("警告：jobName 為空，跳過此條目")
+                    continue
 
                 if filter_by_job_name(job_name):
                     filtered_out_items += 1
-                    print(f"過濾掉：{job_name}")
-                    filtered_out_jobs.append({
+                    page_filtered_out_jobs.append({
                         "Job Name": job_name,
                         "Description": clean_text(job.get("description", "")),
                         "Job Address": clean_text(job.get("jobAddrNoDesc", "")),
@@ -112,7 +118,16 @@ def get_jobs():
                     "Job Link": clean_text(job.get("link", {}).get("job", "")),
                     "Labels": extract_labels(job.get("description", ""))
                 }
-                all_data.append(job_info)
+                page_jobs.append(job_info)
+
+            all_data.extend(page_jobs)
+            filtered_out_jobs.extend(page_filtered_out_jobs)
+
+            yield f"data: {json.dumps({'jobs': page_jobs})}\n\n"
+            yield f"data: {json.dumps({'filtered_out_jobs': page_filtered_out_jobs})}\n\n"
+
+            page_jobs.clear()
+            page_filtered_out_jobs.clear()
 
             if page_index >= total_pages:
                 break
@@ -120,13 +135,11 @@ def get_jobs():
             page_index += 1
 
         total_items -= filtered_out_items
-
         metadata['total'] = total_items
         metadata['filtered_out'] = filtered_out_items
 
         yield f"data: {json.dumps({'metadata': metadata})}\n\n"
-        yield f"data: {json.dumps({'jobs': all_data})}\n\n"
-        yield f"data: {json.dumps({'filtered_out_jobs': filtered_out_jobs})}\n\n"
+        print(f"已過濾的工作數量: {len(filtered_out_jobs)}")
 
     return Response(generate_jobs(), content_type='text/event-stream')
 
