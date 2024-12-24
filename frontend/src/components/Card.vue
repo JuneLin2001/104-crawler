@@ -20,6 +20,11 @@
         required: true,
       },
     },
+    methods: {
+      openJobLink(url: string) {
+        window.open(url, "_blank");
+      },
+    },
   };
 </script>
 
@@ -48,7 +53,7 @@
         <div class="ml-auto flex items-center gap-4">
           <Button
             label="查看職位"
-            :href="job['Job Link']"
+            @click="openJobLink(job['Job Link'])"
             rounded
             severity="success"
             class="text-sm"
