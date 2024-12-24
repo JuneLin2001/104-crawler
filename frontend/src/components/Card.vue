@@ -45,9 +45,7 @@
             class="text-indigo-600 hover:text-indigo-800 mt-2 inline-block width-full"
             >查看職位</a
           >
-          <span class="text-sm text-gray-500 ml-auto"
-            >卡片序號: {{ index }}</span
-          >
+          <span class="text-sm text-gray-500 ml-auto"> # {{ index }}</span>
         </div>
       </li>
     </ul>
