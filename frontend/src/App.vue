@@ -90,7 +90,7 @@
       </label>
       <label class="ml-4">
         <input type="radio" v-model="showFilteredOut" :value="false" />
-        顯示正常工作
+        顯示符合條件的工作
       </label>
     </div>
 
