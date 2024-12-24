@@ -1,5 +1,11 @@
 <script lang="ts">
+  import PrimeProgressBar from "primevue/progressbar";
+
   export default {
+    name: "CustomProgressBar",
+    components: {
+      PrimeProgressBar,
+    },
     props: {
       progress: {
         type: Number,
@@ -10,13 +16,5 @@
 </script>
 
 <template>
-  <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
-    <div
-      class="bg-green-500 h-4 rounded-full"
-      :style="{ width: progress + '%' }"
-    ></div>
-    <p class="text-center text-sm text-gray-600">
-      進度: {{ progress.toFixed(2) }}%
-    </p>
-  </div>
+  <PrimeProgressBar :value="Number(progress.toFixed(2))" />
 </template>
