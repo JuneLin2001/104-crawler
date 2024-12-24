@@ -1,14 +1,13 @@
 from flask import Blueprint, Response
 from services.job_service import JobService
-from services.keyword_service import KeywordService
 from services.filter_service import FilterService
 from utils.text_utils import clean_text
+from utils.job_utils import generate_job_info
 import requests
 import json
 
 job_controller = Blueprint("job_controller", __name__)
 job_service = JobService()
-keyword_service = KeywordService()
 filter_service = FilterService()
 
 
@@ -55,21 +54,12 @@ def get_jobs():
             page_jobs = []
 
             for job in job_list:
+                job_info = generate_job_info(job)
+
                 job_name = clean_text(job.get("jobName", ""))
                 if not job_name:
                     print("警告：jobName 為空，跳過此條目")
                     continue
-
-                job_info = {
-                    "Appear Date": clean_text(job.get("appearDate", "")),
-                    "Company Name": clean_text(job.get("custName", "")),
-                    "Job Name": job_name,
-                    "Description": clean_text(job.get("description", "")),
-                    "Job Address": clean_text(job.get("jobAddrNoDesc", "")),
-                    "Job Link": clean_text(job.get("link", {}).get("job", "")),
-                    "Labels": keyword_service.extract_labels(job.get("description", "")),
-                    "isFiltered": False
-                }
 
                 if filter_service.filter_by_job_name(job_name):
                     filtered_out_items += 1

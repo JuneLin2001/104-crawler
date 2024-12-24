@@ -1,4 +1,3 @@
-
 from utils.text_utils import clean_text
 from services.keyword_service import KeywordService
 
@@ -18,7 +17,8 @@ def generate_job_info(job):
         "Description": clean_text(job.get("description", "")),
         "Job Address": clean_text(job.get("jobAddrNoDesc", "")),
         "Job Link": clean_text(job.get("link", {}).get("job", "")),
-        "Labels": keyword_service.extract_labels(job.get("description", ""))
+        "Labels": keyword_service.extract_labels(job.get("description", "")),
+        "isFiltered": False
     }
 
     return job_info
