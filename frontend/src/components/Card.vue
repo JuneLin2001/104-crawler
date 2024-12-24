@@ -1,5 +1,15 @@
 <script lang="ts">
+  import Tag from "primevue/tag";
+  import PrimeCard from "primevue/card";
+  import Button from "primevue/button";
+
   export default {
+    name: "Card",
+    components: {
+      Tag,
+      PrimeCard,
+      Button,
+    },
     props: {
       job: {
         type: Object,
@@ -14,40 +24,38 @@
 </script>
 
 <template>
-  <div
-    class="p-4 border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out"
-  >
-    <ul class="space-y-4 mt-4">
-      <li>
-        <h4 class="text-xl text-gray-900 mt-2">{{ job["Job Name"] }}</h4>
-        <p class="text-gray-700 mt-2">
-          公司名稱: <span>{{ job["Company Name"] }}</span>
-        </p>
-        <p class="text-gray-700">
-          地址: <span>{{ job["Job Address"] }}</span>
-        </p>
-        <p class="text-gray-700">
-          更新日期: <span>{{ job["Appear Date"] }}</span>
-        </p>
-        <div class="mt-2">
-          <span
-            v-for="label in job.Labels"
-            :key="label"
-            class="inline-block text-xs bg-blue-200 text-blue-700 rounded px-2 py-1 mr-2"
-          >
+  <PrimeCard class="mb-4">
+    <template #title>
+      <h2 class="text-lg font-semibold">{{ job["Company Name"] }}</h2>
+    </template>
+
+    <template #content>
+      <div class="text-gray-700 space-y-2">
+        <p>工作名稱： {{ job["Job Name"] }}</p>
+        <p>地址： {{ job["Job Address"] }}</p>
+        <p>更新日期： {{ job["Appear Date"] }}</p>
+      </div>
+    </template>
+
+    <template #footer>
+      <div class="flex flex-wrap items-center gap-2 mt-4">
+        <div class="flex flex-wrap gap-2">
+          <Tag v-for="label in job.Labels" :key="label" rounded class="text-sm">
             {{ label }}
-          </span>
+          </Tag>
         </div>
-        <div class="flex">
-          <a
+
+        <div class="ml-auto flex items-center gap-4">
+          <Button
+            label="查看職位"
             :href="job['Job Link']"
-            target="_blank"
-            class="text-indigo-600 hover:text-indigo-800 mt-2 inline-block width-full"
-            >查看職位</a
-          >
-          <span class="text-sm text-gray-500 ml-auto"> #{{ index }}</span>
+            rounded
+            severity="success"
+            class="text-sm"
+          />
+          <span class="text-sm text-gray-500">#{{ index }}</span>
         </div>
-      </li>
-    </ul>
-  </div>
+      </div>
+    </template>
+  </PrimeCard>
 </template>
