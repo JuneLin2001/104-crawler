@@ -43,9 +43,10 @@ def extract_labels(description):
 
 
 def filter_by_job_name(job_name):
+    """ 根據關鍵字過濾工作名稱 """
     job_name = clean_text(job_name)
     for keyword in job_name_filter_keywords:
-        if re.search(r'\b' + re.escape(keyword) + r'\b', job_name, re.IGNORECASE):
+        if re.search(re.escape(keyword), job_name, re.IGNORECASE):
             print(f"匹配到關鍵字: {keyword}，過濾: {job_name}")
             return True
     return False
