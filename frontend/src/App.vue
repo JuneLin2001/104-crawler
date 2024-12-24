@@ -11,6 +11,7 @@
     "Appear Date": string;
     "Company Name": string;
     Labels: string[];
+    isFiltered: boolean;
   }
 
   export default {
@@ -22,8 +23,7 @@
     },
     data() {
       return {
-        jobs: [] as Job[],
-        filtered_out_jobs: [] as Job[],
+        jobResults: [] as Job[],
         showFilteredOut: false,
         pageCount: 0,
         totalPages: 0,
@@ -32,8 +32,11 @@
       };
     },
     computed: {
-      filteredOutJobs() {
-        return this.showFilteredOut ? this.filtered_out_jobs : this.jobs;
+      normalJobs() {
+        return this.jobResults.filter((job) => !job.isFiltered);
+      },
+      filteredJobs() {
+        return this.jobResults.filter((job) => job.isFiltered);
       },
     },
     mounted() {
@@ -48,15 +51,8 @@
           this.progress = (this.pageCount / this.totalPages) * 100;
         }
 
-        if (data.jobs) {
-          this.jobs = [...this.jobs, ...data.jobs];
-        }
-
-        if (data.filtered_out_jobs) {
-          this.filtered_out_jobs = [
-            ...this.filtered_out_jobs,
-            ...data.filtered_out_jobs,
-          ];
+        if (data.job_results) {
+          this.jobResults = [...this.jobResults, ...data.job_results];
         }
 
         if (data.metadata) {
@@ -81,7 +77,7 @@
 
     <p class="text-xl text-gray-700 mb-4">
       符合條件的共有 {{ totalItems }} 個工作，過濾了
-      {{ filtered_out_jobs.length }} 個工作
+      {{ filteredJobs.length }} 個工作
     </p>
 
     <ProgressBar :progress="progress" />
@@ -109,12 +105,12 @@
 
     <div>
       <h2 class="mt-6 text-xl">
-        {{ showFilteredOut ? "過濾掉的工作" : "正常工作" }}
+        {{ showFilteredOut ? "過濾掉的工作" : "符合條件的工作" }}
       </h2>
       <Card
-        v-for="(job, index) in filteredOutJobs"
+        v-for="(job, index) in showFilteredOut ? filteredJobs : normalJobs"
         :key="job['Job Link']"
-        :job="showFilteredOut ? job : jobs[index]"
+        :job="job"
         :index="index + 1"
       />
     </div>
