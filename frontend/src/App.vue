@@ -1,6 +1,7 @@
 <script lang="ts">
   import Card from "./components/Card.vue";
   import ProgressBar from "./components/ProgressBar.vue";
+  import RadioButton from "primevue/radiobutton";
 
   interface Job {
     "Job Name": string;
@@ -17,6 +18,7 @@
     components: {
       Card,
       ProgressBar,
+      RadioButton,
     },
     data() {
       return {
@@ -76,6 +78,7 @@
     <p class="text-xl text-gray-700 mb-4">
       已抓到 {{ pageCount }} 頁資料，共 {{ totalPages }} 頁
     </p>
+
     <p class="text-xl text-gray-700 mb-4">
       符合條件的共有 {{ totalItems }} 個工作，過濾了
       {{ filtered_out_jobs.length }} 個工作
@@ -83,32 +86,35 @@
 
     <ProgressBar :progress="progress" />
 
-    <div class="mt-6">
-      <label>
-        <input type="radio" v-model="showFilteredOut" :value="true" />
-        顯示過濾掉的工作
-      </label>
-      <label class="ml-4">
-        <input type="radio" v-model="showFilteredOut" :value="false" />
-        顯示符合條件的工作
-      </label>
+    <div class="flex flex-wrap gap-4">
+      <div class="flex items-center gap-2">
+        <RadioButton
+          v-model="showFilteredOut"
+          inputId="filter1"
+          name="jobFilter"
+          :value="true"
+        />
+        <label for="filter1">顯示過濾掉的工作</label>
+      </div>
+      <div class="flex items-center gap-2">
+        <RadioButton
+          v-model="showFilteredOut"
+          inputId="filter2"
+          name="jobFilter"
+          :value="false"
+        />
+        <label for="filter2">顯示符合條件的工作</label>
+      </div>
     </div>
 
-    <div v-if="showFilteredOut">
-      <h2 class="mt-6 text-xl">過濾掉的工作</h2>
+    <div>
+      <h2 class="mt-6 text-xl">
+        {{ showFilteredOut ? "過濾掉的工作" : "正常工作" }}
+      </h2>
       <Card
         v-for="(job, index) in filteredOutJobs"
         :key="job['Job Link']"
-        :job="job"
-        :index="index + 1"
-      />
-    </div>
-    <div v-else>
-      <h2 class="mt-6 text-xl">正常工作</h2>
-      <Card
-        v-for="(job, index) in jobs"
-        :key="job['Job Link']"
-        :job="job"
+        :job="showFilteredOut ? job : jobs[index]"
         :index="index + 1"
       />
     </div>
