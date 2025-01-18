@@ -1,7 +1,6 @@
 <script lang="ts">
   import Card from "./components/Card.vue";
   import ProgressBar from "./components/ProgressBar.vue";
-  import RadioButton from "primevue/radiobutton";
 
   interface Job {
     "Job Name": string;
@@ -11,7 +10,6 @@
     "Appear Date": string;
     "Company Name": string;
     Labels: string[];
-    isFiltered: boolean;
   }
 
   export default {
@@ -19,7 +17,6 @@
     components: {
       Card,
       ProgressBar,
-      RadioButton,
     },
     data() {
       return {
@@ -33,10 +30,7 @@
     },
     computed: {
       normalJobs() {
-        return this.jobResults.filter((job) => !job.isFiltered);
-      },
-      filteredJobs() {
-        return this.jobResults.filter((job) => job.isFiltered);
+        return this.jobResults;
       },
     },
     mounted() {
@@ -76,39 +70,14 @@
     </p>
 
     <p class="text-xl text-gray-700 mb-4">
-      符合條件的共有 {{ totalItems }} 個工作，過濾了
-      {{ filteredJobs.length }} 個工作
+      符合條件的共有 {{ totalItems }} 個工作
     </p>
 
     <ProgressBar :progress="progress" />
 
-    <div class="flex flex-wrap gap-4">
-      <div class="flex items-center gap-2">
-        <RadioButton
-          v-model="showFilteredOut"
-          inputId="filter1"
-          name="jobFilter"
-          :value="true"
-        />
-        <label for="filter1">顯示過濾掉的工作</label>
-      </div>
-      <div class="flex items-center gap-2">
-        <RadioButton
-          v-model="showFilteredOut"
-          inputId="filter2"
-          name="jobFilter"
-          :value="false"
-        />
-        <label for="filter2">顯示符合條件的工作</label>
-      </div>
-    </div>
-
     <div>
-      <h2 class="mt-6 text-xl">
-        {{ showFilteredOut ? "過濾掉的工作" : "符合條件的工作" }}
-      </h2>
       <Card
-        v-for="(job, index) in showFilteredOut ? filteredJobs : normalJobs"
+        v-for="(job, index) in normalJobs"
         :key="job['Job Link']"
         :job="job"
         :index="index + 1"

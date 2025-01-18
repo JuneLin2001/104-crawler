@@ -1,6 +1,5 @@
 from flask import Blueprint, Response
 from services.job_service import JobService
-from services.filter_service import FilterService
 from utils.text_utils import clean_text
 from utils.job_utils import generate_job_info
 import requests
@@ -8,18 +7,15 @@ import json
 
 job_controller = Blueprint("job_controller", __name__)
 job_service = JobService()
-filter_service = FilterService()
 
 
 @job_controller.route("/api/jobs")
 def get_jobs():
     def generate_jobs():
         all_data = []
-        filtered_out_jobs = []
         page_index = 1
         total_pages = 0
         total_items = 0
-        filtered_out_items = 0
 
         response = requests.get(f"{job_service.url}&page={
                                 page_index}", headers=job_service.headers)
@@ -61,12 +57,7 @@ def get_jobs():
                     print("警告：jobName 為空，跳過此條目")
                     continue
 
-                if filter_service.filter_by_job_name(job_name):
-                    filtered_out_items += 1
-                    job_info["isFiltered"] = True
-                    page_jobs.append(job_info)
-                else:
-                    page_jobs.append(job_info)
+                page_jobs.append(job_info)
 
             all_data.extend(page_jobs)
 
@@ -79,11 +70,8 @@ def get_jobs():
 
             page_index += 1
 
-        total_items -= filtered_out_items
         metadata['total'] = total_items
-        metadata['filtered_out'] = filtered_out_items
 
         yield f"data: {json.dumps({'metadata': metadata})}\n\n"
-        print(f"已過濾的工作數量: {filtered_out_items}")
 
     return Response(generate_jobs(), content_type='text/event-stream')
